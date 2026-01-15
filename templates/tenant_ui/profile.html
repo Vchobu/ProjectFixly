@@ -1,0 +1,52 @@
+{% extends 'tenant_ui/base.html' %}
+
+{% block title %}Mon profil - Fixly{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Mon profil</h1>
+<p class="page-subtitle">Vos informations personnelles</p>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-user me-2"></i>Informations</div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr><td class="text-muted" width="35%">Nom</td><td class="fw-bold">{{ tenant.last_name }}</td></tr>
+                    <tr><td class="text-muted">Prénom</td><td class="fw-bold">{{ tenant.first_name }}</td></tr>
+                    <tr><td class="text-muted">Email</td><td>{{ tenant.email }}</td></tr>
+                    <tr><td class="text-muted">Téléphone</td><td>{{ tenant.phone|default:"-" }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-home me-2"></i>Mon logement</div>
+            <div class="card-body">
+                {% if tenant.unit %}
+                <table class="table table-borderless mb-0">
+                    <tr><td class="text-muted" width="35%">Immeuble</td><td class="fw-bold">{{ tenant.unit.building.name }}</td></tr>
+                    <tr><td class="text-muted">Adresse</td><td>{{ tenant.unit.building.address }}</td></tr>
+                    <tr><td class="text-muted">Ville</td><td>{{ tenant.unit.building.postal_code }} {{ tenant.unit.building.city }}</td></tr>
+                    <tr><td class="text-muted">Unité</td><td class="fw-bold">{{ tenant.unit.unit_number }}</td></tr>
+                </table>
+                {% else %}
+                <p class="text-muted mb-0">Non renseigné</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="fas fa-key me-2"></i>Sécurité</div>
+    <div class="card-body">
+        <p class="text-muted">Modifiez votre mot de passe pour sécuriser votre compte.</p>
+        <a href="{% url 'tenant_change_password' %}" class="btn btn-outline-primary">
+            <i class="fas fa-lock me-1"></i>Changer le mot de passe
+        </a>
+    </div>
+</div>
+{% endblock %}

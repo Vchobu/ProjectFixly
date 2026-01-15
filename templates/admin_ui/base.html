@@ -1,0 +1,35 @@
+{% extends 'fixly_base.html' %}
+
+{% block primary_color %}#2c3e50{% endblock %}
+
+{% block logo_url %}{% url 'admin_dashboard' %}{% endblock %}
+{% block portal_name %}Administration{% endblock %}
+
+{% block user_initial %}{{ user.username|slice:":1"|upper }}{% endblock %}
+{% block user_name %}{{ user.username }}{% endblock %}
+
+{% block sidebar_nav %}
+<a href="{% url 'admin_dashboard' %}" class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+    <i class="fas fa-tachometer-alt"></i> Dashboard
+</a>
+<a href="{% url 'admin_tickets' %}" class="{% if 'ticket' in request.resolver_match.url_name %}active{% endif %}">
+    <i class="fas fa-ticket-alt"></i> Tickets
+    {% if stats.new %}<span class="badge bg-danger">{{ stats.new }}</span>{% endif %}
+</a>
+<a href="{% url 'admin_contractors' %}" class="{% if request.resolver_match.url_name == 'admin_contractors' %}active{% endif %}">
+    <i class="fas fa-tools"></i> Contractors
+</a>
+<a href="{% url 'admin_buildings' %}" class="{% if request.resolver_match.url_name == 'admin_buildings' %}active{% endif %}">
+    <i class="fas fa-city"></i> Buildings
+</a>
+<a href="{% url 'admin_reports' %}" class="{% if request.resolver_match.url_name == 'admin_reports' %}active{% endif %}">
+    <i class="fas fa-chart-bar"></i> Rapports
+</a>
+{% endblock %}
+
+{% block user_menu %}
+<li><span class="dropdown-item-text text-muted small">Connecté en tant qu'Admin</span></li>
+<li><hr class="dropdown-divider"></li>
+<li><a class="dropdown-item" href="{% url 'change_password' %}"><i class="fas fa-key me-2"></i>Changer mot de passe</a></li>
+<li><a class="dropdown-item" href="{% url 'admin_logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Déconnexion</a></li>
+{% endblock %}

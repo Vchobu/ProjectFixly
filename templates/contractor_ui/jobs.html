@@ -1,0 +1,63 @@
+{% extends 'contractor_ui/base.html' %}
+
+{% block title %}Mes Jobs - Fixly{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Mes Jobs</h1>
+<p class="page-subtitle">Liste de vos interventions</p>
+
+<!-- Filtres -->
+<div class="mb-4">
+    <div class="btn-group">
+        <a href="{% url 'contractor_jobs' %}" class="btn {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %}">Tous</a>
+        <a href="?status=open" class="btn {% if status_filter == 'open' %}btn-primary{% else %}btn-outline-secondary{% endif %}">En attente</a>
+        <a href="?status=in_progress" class="btn {% if status_filter == 'in_progress' %}btn-primary{% else %}btn-outline-secondary{% endif %}">En cours</a>
+        <a href="?status=resolved" class="btn {% if status_filter == 'resolved' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Terminés</a>
+    </div>
+</div>
+
+<!-- Liste -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Titre</th>
+                    <th>Adresse</th>
+                    <th>Catégorie</th>
+                    <th>Statut</th>
+                    <th>Assigné le</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td><a href="{% url 'contractor_job_detail' ticket.ticket_id %}" class="fw-bold text-primary">#{{ ticket.ticket_id }}</a></td>
+                    <td>{{ ticket.title|truncatewords:5 }}</td>
+                    <td>
+                        {% if ticket.unit and ticket.unit.building %}
+                        {{ ticket.unit.building.name }}<br>
+                        <small class="text-muted">{{ ticket.unit.unit_number }}</small>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>{{ ticket.category.name|default:"-" }}</td>
+                    <td><span class="status-badge status-{{ ticket.status }}">{{ ticket.status }}</span></td>
+                    <td class="text-muted">{{ ticket.assigned_at|date:"d/m/Y" }}</td>
+                    <td>
+                        <a href="{% url 'contractor_job_detail' ticket.ticket_id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i> Voir
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">Aucun job trouvé</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

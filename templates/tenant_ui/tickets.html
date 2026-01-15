@@ -1,0 +1,86 @@
+{% extends 'tenant_ui/base.html' %}
+
+{% block title %}Mes tickets - Fixly{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="page-title">Mes tickets</h1>
+        <p class="page-subtitle">Historique de vos demandes</p>
+    </div>
+    <a href="{% url 'tenant_create_ticket' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Nouveau ticket
+    </a>
+</div>
+
+<!-- Filtres -->
+<div class="mb-4">
+    <div class="btn-group">
+        <a href="{% url 'tenant_tickets' %}" class="btn {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %}">Tous</a>
+        <a href="?status=open" class="btn {% if status_filter == 'open' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Ouverts</a>
+        <a href="?status=in_progress" class="btn {% if status_filter == 'in_progress' %}btn-primary{% else %}btn-outline-secondary{% endif %}">En cours</a>
+        <a href="?status=resolved" class="btn {% if status_filter == 'resolved' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Résolus</a>
+    </div>
+</div>
+
+<!-- Liste -->
+{% if tickets %}
+{% for ticket in tickets %}
+<div class="ticket-item {% if ticket.sla_status == 'breached' %}sla-breached{% elif ticket.sla_status == 'warning' %}sla-warning{% endif %}">
+    <div class="row align-items-center">
+        <div class="col-md-5">
+            <div class="d-flex align-items-center gap-2">
+                <a href="{% url 'tenant_ticket_detail' ticket.ticket_id %}" class="fw-bold text-decoration-none">
+                    #{{ ticket.ticket_id }} - {{ ticket.title }}
+                </a>
+                <!-- SLA Badge -->
+                {% if ticket.sla_status == 'breached' %}
+                <span class="badge bg-danger sla-badge"><i class="fas fa-exclamation-circle me-1"></i>En retard</span>
+                {% elif ticket.sla_status == 'warning' %}
+                <span class="badge bg-warning text-dark sla-badge"><i class="fas fa-clock me-1"></i>Urgent</span>
+                {% endif %}
+            </div>
+            <p class="text-muted small mb-0">{{ ticket.description|truncatewords:15 }}</p>
+        </div>
+        <div class="col-md-2 text-center">
+            {% if ticket.category %}
+            <span class="badge bg-secondary">{{ ticket.category.name }}</span>
+            {% endif %}
+        </div>
+        <div class="col-md-2 text-center">
+            <span class="status-badge status-{{ ticket.status }}">{{ ticket.status }}</span>
+        </div>
+        <div class="col-md-3 text-end">
+            <small class="text-muted me-2">{{ ticket.created_at|date:"d/m/Y" }}</small>
+            <a href="{% url 'tenant_ticket_detail' ticket.ticket_id %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-eye me-1"></i>Voir
+            </a>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+        <p class="text-muted">Aucun ticket trouvé</p>
+        <a href="{% url 'tenant_create_ticket' %}" class="btn btn-primary">Créer un ticket</a>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.ticket-item.sla-breached {
+    border-left: 4px solid #dc3545 !important;
+    background: #fff5f5;
+}
+.ticket-item.sla-warning {
+    border-left: 4px solid #ffc107 !important;
+    background: #fffdf5;
+}
+.sla-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+}
+</style>
+{% endblock %}

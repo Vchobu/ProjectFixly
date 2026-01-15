@@ -1,0 +1,31 @@
+{% extends 'fixly_base.html' %}
+
+{% block primary_color %}#e67e22{% endblock %}
+
+{% block logo_url %}{% url 'contractor_dashboard' %}{% endblock %}
+{% block portal_name %}Espace Contractor{% endblock %}
+
+{% block user_initial %}{{ contractor.company_name|slice:":1"|upper }}{% endblock %}
+{% block user_name %}{{ contractor.company_name }}{% endblock %}
+
+{% block sidebar_nav %}
+<a href="{% url 'contractor_dashboard' %}" class="{% if request.resolver_match.url_name == 'contractor_dashboard' %}active{% endif %}">
+    <i class="fas fa-tachometer-alt"></i> Dashboard
+</a>
+<a href="{% url 'contractor_jobs' %}" class="{% if 'job' in request.resolver_match.url_name %}active{% endif %}">
+    <i class="fas fa-briefcase"></i> Mes Jobs
+    {% if stats.pending %}<span class="badge bg-warning text-dark">{{ stats.pending }}</span>{% endif %}
+</a>
+<a href="{% url 'contractor_profile' %}" class="{% if request.resolver_match.url_name == 'contractor_profile' %}active{% endif %}">
+    <i class="fas fa-user"></i> Mon profil
+</a>
+{% endblock %}
+
+{% block user_menu %}
+<li><span class="dropdown-item-text text-muted small">Contractor</span></li>
+<li><hr class="dropdown-divider"></li>
+<li><a class="dropdown-item" href="{% url 'contractor_profile' %}"><i class="fas fa-user me-2"></i>Mon profil</a></li>
+<li><a class="dropdown-item" href="{% url 'contractor_change_password' %}"><i class="fas fa-key me-2"></i>Changer mot de passe</a></li>
+<li><hr class="dropdown-divider"></li>
+<li><a class="dropdown-item" href="{% url 'contractor_logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Déconnexion</a></li>
+{% endblock %}

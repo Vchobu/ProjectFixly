@@ -1,0 +1,224 @@
+{% extends 'contractor_ui/base.html' %}
+
+{% block title %}Job #{{ ticket.ticket_id }} - Fixly{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'contractor_jobs' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Retour
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Ticket info -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><strong>Job #{{ ticket.ticket_id }}</strong></span>
+                <span class="status-badge status-{{ ticket.status }}">{{ ticket.status }}</span>
+            </div>
+            <div class="card-body">
+                <h5>{{ ticket.title }}</h5>
+                <p class="text-muted">{{ ticket.description }}</p>
+                
+                <!-- Photos -->
+                {% if photos %}
+                <hr>
+                <h6><i class="fas fa-images me-2"></i>Photos du problème ({{ photos|length }})</h6>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    {% for photo in photos %}
+                    <a href="/media/{{ photo.file_path }}" target="_blank" class="photo-thumbnail">
+                        <img src="/media/{{ photo.file_path }}" alt="{{ photo.file_name }}">
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <hr>
+                
+                <!-- Actions -->
+                <div class="d-flex gap-2 flex-wrap">
+                    {% if ticket.status == 'open' %}
+                    <form method="post" action="{% url 'contractor_update_status' ticket.ticket_id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="in_progress">
+                        <button class="btn btn-warning"><i class="fas fa-play me-1"></i>Démarrer</button>
+                    </form>
+                    {% elif ticket.status == 'in_progress' %}
+                    <form method="post" action="{% url 'contractor_update_status' ticket.ticket_id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="resolved">
+                        <button class="btn btn-success"><i class="fas fa-check me-1"></i>Marquer terminé</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Timeline visuelle -->
+        <div class="card mb-4">
+            <div class="card-header"><i class="fas fa-history me-2"></i>Progression</div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item completed">
+                        <div class="timeline-marker"><i class="fas fa-plus"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Ticket créé</h6>
+                            <p class="text-muted mb-0 small">{{ ticket.created_at|date:"d/m/Y à H:i" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item completed">
+                        <div class="timeline-marker"><i class="fas fa-user-check"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Assigné à vous</h6>
+                            {% if ticket.assigned_at %}
+                            <p class="text-muted mb-0 small">{{ ticket.assigned_at|date:"d/m/Y à H:i" }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if ticket.status == 'in_progress' %}current{% elif ticket.status == 'resolved' or ticket.status == 'closed' %}completed{% else %}pending{% endif %}">
+                        <div class="timeline-marker"><i class="fas fa-wrench"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Intervention</h6>
+                            {% if ticket.status == 'in_progress' %}
+                            <p class="text-warning mb-0 small">En cours</p>
+                            {% elif ticket.status == 'resolved' or ticket.status == 'closed' %}
+                            <p class="text-success mb-0 small">Terminée</p>
+                            {% else %}
+                            <p class="text-muted mb-0 small">Cliquez "Démarrer"</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if ticket.status == 'resolved' %}current{% elif ticket.status == 'closed' %}completed{% else %}pending{% endif %}">
+                        <div class="timeline-marker"><i class="fas fa-check"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Résolu</h6>
+                            {% if ticket.resolved_at %}
+                            <p class="text-muted mb-0 small">{{ ticket.resolved_at|date:"d/m/Y à H:i" }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Messages -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-comments me-2"></i>Messages</div>
+            <div class="card-body">
+                {% for msg in messages %}
+                <div class="mb-3 p-3 rounded {% if msg.contractor_sender %}bg-warning bg-opacity-25{% else %}bg-light{% endif %}">
+                    <div class="d-flex justify-content-between">
+                        <strong>
+                            {% if msg.contractor_sender %}Vous
+                            {% elif msg.tenant_sender %}{{ msg.tenant_sender.first_name }} {{ msg.tenant_sender.last_name }}
+                            {% else %}Manager{% endif %}
+                        </strong>
+                        <small class="text-muted">{{ msg.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <p class="mb-0 mt-2">{{ msg.message_text }}</p>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">Aucun message</p>
+                {% endfor %}
+                
+                <hr>
+                <form method="post" action="{% url 'contractor_add_message' ticket.ticket_id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <textarea name="message" class="form-control" rows="3" placeholder="Écrire un message..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane me-1"></i>Envoyer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Access Windows / Disponibilités -->
+        {% if ticket.access_windows %}
+        <div class="card mb-3 border-success">
+            <div class="card-header bg-success text-white"><i class="fas fa-calendar-check me-2"></i>Disponibilités locataire</div>
+            <div class="card-body">
+                <p class="mb-0 small">{{ ticket.access_windows }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Infos -->
+        <div class="card mb-3">
+            <div class="card-header">Informations</div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Catégorie:</strong> {{ ticket.category.name|default:"-" }}</p>
+                <p class="mb-2"><strong>Sévérité:</strong> 
+                    <span class="badge {% if ticket.severity == 'critical' %}bg-danger{% elif ticket.severity == 'high' %}bg-warning{% else %}bg-info{% endif %}">
+                        {{ ticket.severity|default:"medium" }}
+                    </span>
+                </p>
+                <p class="mb-2"><strong>Créé le:</strong> {{ ticket.created_at|date:"d/m/Y H:i" }}</p>
+                <p class="mb-0"><strong>Assigné le:</strong> {{ ticket.assigned_at|date:"d/m/Y H:i" }}</p>
+            </div>
+        </div>
+        
+        <!-- Localisation -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="fas fa-map-marker-alt me-2"></i>Localisation</div>
+            <div class="card-body">
+                {% if ticket.unit %}
+                <p class="fw-bold mb-1">{{ ticket.unit.building.name }}</p>
+                <p class="text-muted mb-1">{{ ticket.unit.building.address }}</p>
+                <p class="text-muted mb-2">{{ ticket.unit.building.postal_code }} {{ ticket.unit.building.city }}</p>
+                <hr>
+                <p class="mb-0"><strong>Unité:</strong> {{ ticket.unit.unit_number }}</p>
+                {% if ticket.unit.floor %}
+                <p class="mb-0"><strong>Étage:</strong> {{ ticket.unit.floor }}</p>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Contact Locataire -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-user me-2"></i>Contact</div>
+            <div class="card-body">
+                {% if ticket.tenant %}
+                <p class="fw-bold mb-1">{{ ticket.tenant.first_name }} {{ ticket.tenant.last_name|slice:":1" }}.</p>
+                <p class="mb-0"><i class="fas fa-phone me-1"></i>{{ ticket.tenant.phone|default:"Non disponible" }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.photo-thumbnail {
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #dee2e6;
+}
+.photo-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Timeline */
+.timeline { position: relative; padding-left: 30px; }
+.timeline::before { content: ''; position: absolute; left: 15px; top: 0; bottom: 0; width: 3px; background: #e9ecef; }
+.timeline-item { position: relative; padding-bottom: 20px; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-marker { position: absolute; left: -30px; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; border: 3px solid #e9ecef; background: white; color: #adb5bd; }
+.timeline-item.completed .timeline-marker { background: #28a745; border-color: #28a745; color: white; }
+.timeline-item.current .timeline-marker { background: #e67e22; border-color: #e67e22; color: white; animation: pulse 2s infinite; }
+.timeline-item.pending .timeline-marker { background: #f8f9fa; }
+.timeline-content { padding-left: 15px; }
+.timeline-content h6 { font-weight: 600; }
+.timeline-item.pending .timeline-content h6 { color: #adb5bd; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(230, 126, 34, 0); } 100% { box-shadow: 0 0 0 0 rgba(230, 126, 34, 0); } }
+</style>
+{% endblock %}

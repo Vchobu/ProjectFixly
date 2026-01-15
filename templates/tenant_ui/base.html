@@ -1,0 +1,33 @@
+{% extends 'fixly_base.html' %}
+
+{% block primary_color %}#6c5ce7{% endblock %}
+
+{% block logo_url %}{% url 'tenant_dashboard' %}{% endblock %}
+{% block portal_name %}Espace Locataire{% endblock %}
+
+{% block user_initial %}{{ tenant.first_name|slice:":1"|upper }}{% endblock %}
+{% block user_name %}{{ tenant.first_name }} {{ tenant.last_name }}{% endblock %}
+
+{% block sidebar_nav %}
+<a href="{% url 'tenant_dashboard' %}" class="{% if request.resolver_match.url_name == 'tenant_dashboard' %}active{% endif %}">
+    <i class="fas fa-home"></i> Accueil
+</a>
+<a href="{% url 'tenant_tickets' %}" class="{% if request.resolver_match.url_name == 'tenant_tickets' %}active{% endif %}">
+    <i class="fas fa-ticket-alt"></i> Mes tickets
+</a>
+<a href="{% url 'tenant_create_ticket' %}" class="{% if request.resolver_match.url_name == 'tenant_create_ticket' %}active{% endif %}">
+    <i class="fas fa-plus-circle"></i> Nouveau ticket
+</a>
+<a href="{% url 'tenant_profile' %}" class="{% if request.resolver_match.url_name == 'tenant_profile' %}active{% endif %}">
+    <i class="fas fa-user"></i> Mon profil
+</a>
+{% endblock %}
+
+{% block user_menu %}
+<li><span class="dropdown-item-text text-muted small">Locataire</span></li>
+<li><hr class="dropdown-divider"></li>
+<li><a class="dropdown-item" href="{% url 'tenant_profile' %}"><i class="fas fa-user me-2"></i>Mon profil</a></li>
+<li><a class="dropdown-item" href="{% url 'tenant_change_password' %}"><i class="fas fa-key me-2"></i>Changer mot de passe</a></li>
+<li><hr class="dropdown-divider"></li>
+<li><a class="dropdown-item" href="{% url 'tenant_logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Déconnexion</a></li>
+{% endblock %}

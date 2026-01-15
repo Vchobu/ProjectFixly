@@ -1,0 +1,25 @@
+{% extends 'login_base.html' %}
+
+{% block title %}Connexion Contractor - Fixly{% endblock %}
+{% block primary_color %}#e67e22{% endblock %}
+{% block portal_badge %}Espace Contractor{% endblock %}
+{% block login_title %}Espace Technicien{% endblock %}
+{% block login_subtitle %}Gérez vos interventions assignées{% endblock %}
+
+{% block login_form %}
+<div class="mb-3">
+    <label class="form-label">Email</label>
+    <div class="input-group">
+        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+        <input type="email" name="email" class="form-control" placeholder="votre@email.com" value="plomberie1sa@contractor.ch" required>
+    </div>
+</div>
+
+<div class="mb-4">
+    <label class="form-label">Mot de passe</label>
+    <div class="input-group">
+        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+        <input type="password" name="password" class="form-control" placeholder="••••••••" value="admin" required>
+    </div>
+</div>
+{% endblock %}

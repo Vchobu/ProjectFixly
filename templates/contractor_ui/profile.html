@@ -1,0 +1,37 @@
+{% extends 'contractor_ui/base.html' %}
+
+{% block title %}Mon profil - Fixly{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Mon profil</h1>
+<p class="page-subtitle">Informations de votre entreprise</p>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-building me-2"></i>Entreprise</div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr><td class="text-muted" width="35%">Nom</td><td class="fw-bold">{{ contractor.company_name }}</td></tr>
+                    <tr><td class="text-muted">Contact</td><td>{{ contractor.contact_name|default:"-" }}</td></tr>
+                    <tr><td class="text-muted">Email</td><td>{{ contractor.email }}</td></tr>
+                    <tr><td class="text-muted">Téléphone</td><td>{{ contractor.phone|default:"-" }}</td></tr>
+                    <tr><td class="text-muted">Spécialités</td><td><span class="badge bg-info">{{ contractor.specialties|default:"Général" }}</span></td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-key me-2"></i>Sécurité</div>
+            <div class="card-body">
+                <p class="text-muted">Modifiez votre mot de passe pour sécuriser votre compte.</p>
+                <a href="{% url 'contractor_change_password' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-lock me-1"></i>Changer le mot de passe
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

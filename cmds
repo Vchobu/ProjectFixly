@@ -1,0 +1,56 @@
+python manage.py inspectdb > core/models.py
+psql -U postgres -h localhost
+
+python manage.py check sert à :
+Vérifier que ton projet Django n'a pas d'erreurs de configuration.
+
+
+
+del core\models.py
+echo # Models > core\models.py
+python manage.py inspectdb > core\models.py
+
+
+python manage.py runserver
+
+python manage.py inspectdb | Out-File -Encoding utf8 core\models.py
+python manage.py inspectdb
+
+python manage.py createsuperuser
+Username : admin
+Email : admin@fixly.ch
+Password : admin
+
+python manage.py migrate --run-syncdb
+
+
+python manage.py migrate auth
+python manage.py migrate contenttypes
+python manage.py migrate admin
+python manage.py migrate sessions
+
+python manage.py migrate --run-syncdb
+
+python manage.py migrate core --fake
+python manage.py migrate
+
+
+user = User.objects.get(username='admin')
+user.set_password('admin')
+user.save()
+exit()
+
+-- ajouter un utilisateur avec rôle admin
+
+python manage.py shell
+from core.models import Users
+from django.contrib.auth.hashers import make_password
+
+user = Users(
+    username='fixly_admin',
+    email='admin@fixly.ch',
+    password_hash=make_password('admin123'),
+    role='admin',
+    is_active=True
+)
+user.save()

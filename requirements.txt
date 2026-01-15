@@ -1,0 +1,35 @@
+# Fixly - Dépendances Python
+# ===========================
+
+# Framework Django
+Django>=4.2,<5.0
+
+# Django REST Framework
+djangorestframework>=3.14.0
+django-filter>=23.5
+
+# Base de données PostgreSQL
+psycopg2-binary>=2.9.9
+
+# CORS headers
+django-cors-headers>=4.3.1
+
+# Variables d'environnement
+python-dotenv>=1.0.0
+
+# Outils de développement
+ipython>=8.0.0
+
+# Tests
+pytest>=7.4.0
+pytest-django>=4.5.0
+pytest-cov>=4.1.0
+factory-boy>=3.3.0
+
+# Linting et formatage
+flake8>=6.1.0
+black>=23.12.0
+isort>=5.13.0
+
+# Documentation API
+drf-spectacular>=0.27.0

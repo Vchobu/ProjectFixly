@@ -1,0 +1,204 @@
+{% extends 'tenant_ui/base.html' %}
+
+{% block title %}Nouveau ticket - Fixly{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'tenant_tickets' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Retour
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><i class="fas fa-plus-circle me-2"></i>Signaler un problème</div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Titre du problème *</label>
+                        <input type="text" name="title" class="form-control" placeholder="Ex: Fuite d'eau dans la salle de bain" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Catégorie</label>
+                            <select name="category" class="form-select">
+                                <option value="">-- Sélectionner --</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat.category_id }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Urgence</label>
+                            <select name="severity" class="form-select">
+                                <option value="low">Faible</option>
+                                <option value="medium" selected>Moyenne</option>
+                                <option value="high">Haute</option>
+                                <option value="critical">Critique</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description détaillée *</label>
+                        <textarea name="description" class="form-control" rows="4" placeholder="Décrivez le problème..." required></textarea>
+                    </div>
+                    
+                    <!-- Access Windows / Disponibilités -->
+                    <div class="mb-4">
+                        <label class="form-label"><i class="fas fa-calendar-alt me-1"></i>Vos disponibilités pour l'intervention</label>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p class="text-muted small mb-3">Indiquez quand le technicien peut accéder à votre logement</p>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Jours préférés</label>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="days" value="lundi" id="day_lun">
+                                                <label class="form-check-label" for="day_lun">Lun</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="days" value="mardi" id="day_mar">
+                                                <label class="form-check-label" for="day_mar">Mar</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="days" value="mercredi" id="day_mer">
+                                                <label class="form-check-label" for="day_mer">Mer</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="days" value="jeudi" id="day_jeu">
+                                                <label class="form-check-label" for="day_jeu">Jeu</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="days" value="vendredi" id="day_ven">
+                                                <label class="form-check-label" for="day_ven">Ven</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="days" value="samedi" id="day_sam">
+                                                <label class="form-check-label" for="day_sam">Sam</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Créneaux horaires</label>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="times" value="matin (8h-12h)" id="time_matin">
+                                                <label class="form-check-label" for="time_matin">Matin (8h-12h)</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="times" value="après-midi (14h-18h)" id="time_aprem">
+                                                <label class="form-check-label" for="time_aprem">Après-midi (14h-18h)</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="times" value="soir (18h-20h)" id="time_soir">
+                                                <label class="form-check-label" for="time_soir">Soir (18h-20h)</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-0">
+                                    <label class="form-label small">Remarques d'accès (code, interphone, clé...)</label>
+                                    <textarea name="access_notes" class="form-control" rows="2" placeholder="Ex: Code d'entrée 1234, sonnez à l'interphone Martin..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Photos -->
+                    <div class="mb-4">
+                        <label class="form-label"><i class="fas fa-camera me-1"></i>Photos (optionnel)</label>
+                        <input type="file" name="photos" id="photoInput" class="form-control" multiple accept="image/*">
+                        <small class="text-muted">Formats acceptés: JPG, PNG, GIF. Max 5 photos, 5MB chacune.</small>
+                        
+                        <!-- Preview -->
+                        <div id="photoPreview" class="d-flex flex-wrap gap-2 mt-3"></div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane me-1"></i>Envoyer</button>
+                        <a href="{% url 'tenant_dashboard' %}" class="btn btn-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.photo-preview-item {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #dee2e6;
+}
+.photo-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.photo-preview-item .remove-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    cursor: pointer;
+}
+</style>
+
+<script>
+document.getElementById('photoInput').addEventListener('change', function(e) {
+    const preview = document.getElementById('photoPreview');
+    preview.innerHTML = '';
+    
+    const files = Array.from(e.target.files).slice(0, 5);
+    
+    files.forEach((file, index) => {
+        if (file.size > 5 * 1024 * 1024) {
+            alert('La photo ' + file.name + ' dépasse 5MB');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const div = document.createElement('div');
+            div.className = 'photo-preview-item';
+            div.innerHTML = `
+                <img src="${e.target.result}" alt="Preview">
+                <button type="button" class="remove-btn" onclick="removePhoto(${index})">×</button>
+            `;
+            preview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    });
+});
+
+function removePhoto(index) {
+    const input = document.getElementById('photoInput');
+    const dt = new DataTransfer();
+    const files = Array.from(input.files);
+    
+    files.forEach((file, i) => {
+        if (i !== index) dt.items.add(file);
+    });
+    
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change'));
+}
+</script>
+{% endblock %}

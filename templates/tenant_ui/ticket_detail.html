@@ -1,0 +1,308 @@
+{% extends 'tenant_ui/base.html' %}
+
+{% block title %}Ticket #{{ ticket.ticket_id }} - Fixly{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'tenant_tickets' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i>Retour
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Ticket -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><strong>Ticket #{{ ticket.ticket_id }}</strong></span>
+                <span class="status-badge status-{{ ticket.status }}">{{ ticket.status }}</span>
+            </div>
+            <div class="card-body">
+                <h5>{{ ticket.title }}</h5>
+                <p class="text-muted">{{ ticket.description }}</p>
+                
+                <!-- Photos -->
+                {% if photos %}
+                <hr>
+                <h6><i class="fas fa-images me-2"></i>Photos jointes</h6>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    {% for photo in photos %}
+                    <a href="/media/{{ photo.file_path }}" target="_blank" class="photo-thumbnail">
+                        <img src="/media/{{ photo.file_path }}" alt="{{ photo.file_name }}">
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Timeline visuelle -->
+        <div class="card mb-4">
+            <div class="card-header"><i class="fas fa-history me-2"></i>Suivi du ticket</div>
+            <div class="card-body">
+                <div class="timeline">
+                    <!-- Création -->
+                    <div class="timeline-item completed">
+                        <div class="timeline-marker"><i class="fas fa-plus"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Ticket créé</h6>
+                            <p class="text-muted mb-0 small">{{ ticket.created_at|date:"d/m/Y à H:i" }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Acknowledged -->
+                    <div class="timeline-item {% if ticket.acknowledged_at or ticket.status != 'open' %}completed{% elif ticket.status == 'open' %}current{% else %}pending{% endif %}">
+                        <div class="timeline-marker"><i class="fas fa-eye"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Pris en compte</h6>
+                            {% if ticket.acknowledged_at %}
+                            <p class="text-muted mb-0 small">{{ ticket.acknowledged_at|date:"d/m/Y à H:i" }}</p>
+                            {% elif ticket.status != 'open' %}
+                            <p class="text-success mb-0 small">Traité</p>
+                            {% else %}
+                            <p class="text-muted mb-0 small">En attente</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Assigned -->
+                    <div class="timeline-item {% if ticket.assigned_contractor %}completed{% elif ticket.status == 'open' %}pending{% else %}current{% endif %}">
+                        <div class="timeline-marker"><i class="fas fa-user-plus"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Technicien assigné</h6>
+                            {% if ticket.assigned_contractor %}
+                            <p class="text-muted mb-0 small">
+                                {{ ticket.assigned_contractor.company_name }}
+                                {% if ticket.assigned_at %}<br>{{ ticket.assigned_at|date:"d/m/Y à H:i" }}{% endif %}
+                            </p>
+                            {% else %}
+                            <p class="text-muted mb-0 small">En attente d'assignation</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- In Progress -->
+                    <div class="timeline-item {% if ticket.status == 'in_progress' %}current{% elif ticket.status == 'resolved' or ticket.status == 'closed' %}completed{% else %}pending{% endif %}">
+                        <div class="timeline-marker"><i class="fas fa-wrench"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Intervention en cours</h6>
+                            {% if ticket.status == 'in_progress' %}
+                            <p class="text-warning mb-0 small">En cours de traitement</p>
+                            {% elif ticket.status == 'resolved' or ticket.status == 'closed' %}
+                            <p class="text-success mb-0 small">Terminé</p>
+                            {% else %}
+                            <p class="text-muted mb-0 small">À venir</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Resolved -->
+                    <div class="timeline-item {% if ticket.status == 'resolved' %}current{% elif ticket.status == 'closed' %}completed{% else %}pending{% endif %}">
+                        <div class="timeline-marker"><i class="fas fa-check"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Résolu</h6>
+                            {% if ticket.resolved_at %}
+                            <p class="text-muted mb-0 small">{{ ticket.resolved_at|date:"d/m/Y à H:i" }}</p>
+                            {% elif ticket.status == 'resolved' %}
+                            <p class="text-success mb-0 small">Problème résolu</p>
+                            {% else %}
+                            <p class="text-muted mb-0 small">À venir</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Closed -->
+                    <div class="timeline-item {% if ticket.status == 'closed' %}completed{% else %}pending{% endif %}">
+                        <div class="timeline-marker"><i class="fas fa-flag-checkered"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Clôturé</h6>
+                            {% if ticket.status == 'closed' %}
+                            <p class="text-success mb-0 small">Ticket fermé</p>
+                            {% else %}
+                            <p class="text-muted mb-0 small">À venir</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ajouter photo -->
+        {% if ticket.status != 'closed' %}
+        <div class="card mb-4">
+            <div class="card-header"><i class="fas fa-camera me-2"></i>Ajouter une photo</div>
+            <div class="card-body">
+                <form method="post" action="{% url 'tenant_add_photo' ticket.ticket_id %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2">
+                        <input type="file" name="photos" class="form-control" multiple accept="image/*">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="fas fa-upload"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Messages -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-comments me-2"></i>Messages</div>
+            <div class="card-body">
+                {% for msg in messages %}
+                <div class="mb-3 p-3 rounded {% if msg.tenant_sender %}bg-primary text-white{% else %}bg-light{% endif %}">
+                    <div class="d-flex justify-content-between">
+                        <strong>
+                            {% if msg.tenant_sender %}Vous
+                            {% elif msg.contractor_sender %}{{ msg.contractor_sender.company_name }}
+                            {% else %}Support{% endif %}
+                        </strong>
+                        <small>{{ msg.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <p class="mb-0 mt-2">{{ msg.message_text }}</p>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">Aucun message</p>
+                {% endfor %}
+                
+                <hr>
+                <form method="post" action="{% url 'tenant_add_message' ticket.ticket_id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <textarea name="message" class="form-control" rows="3" placeholder="Écrire un message..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane me-1"></i>Envoyer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Disponibilités / Access Windows -->
+        {% if ticket.access_windows %}
+        <div class="card mb-3 border-info">
+            <div class="card-header bg-info text-white"><i class="fas fa-calendar-check me-2"></i>Mes disponibilités</div>
+            <div class="card-body">
+                <p class="mb-0 small">{{ ticket.access_windows }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Intervenant -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="fas fa-tools me-2"></i>Intervenant</div>
+            <div class="card-body">
+                {% if ticket.assigned_contractor %}
+                <p class="fw-bold mb-1">{{ ticket.assigned_contractor.company_name }}</p>
+                <p class="mb-1 text-muted">{{ ticket.assigned_contractor.contact_name }}</p>
+                <p class="mb-0"><i class="fas fa-phone me-1"></i>{{ ticket.assigned_contractor.phone }}</p>
+                {% else %}
+                <p class="text-muted text-center mb-0"><i class="fas fa-hourglass-half me-2"></i>En attente</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Localisation -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-map-marker-alt me-2"></i>Localisation</div>
+            <div class="card-body">
+                {% if ticket.unit %}
+                <p class="fw-bold mb-1">{{ ticket.unit.building.name }}</p>
+                <p class="text-muted mb-1">{{ ticket.unit.building.address }}</p>
+                <p class="text-muted mb-0">Unité {{ ticket.unit.unit_number }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.photo-thumbnail {
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #dee2e6;
+    display: block;
+    transition: transform 0.2s, border-color 0.2s;
+}
+.photo-thumbnail:hover {
+    transform: scale(1.05);
+    border-color: #6c5ce7;
+}
+.photo-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #e9ecef;
+    border-radius: 3px;
+}
+.timeline-item {
+    position: relative;
+    padding-bottom: 25px;
+}
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    border: 3px solid #e9ecef;
+    background: white;
+    color: #adb5bd;
+    z-index: 1;
+}
+.timeline-item.completed .timeline-marker {
+    background: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+.timeline-item.current .timeline-marker {
+    background: #ffc107;
+    border-color: #ffc107;
+    color: white;
+    animation: pulse 2s infinite;
+}
+.timeline-item.pending .timeline-marker {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+    color: #adb5bd;
+}
+.timeline-content {
+    padding-left: 15px;
+}
+.timeline-content h6 {
+    font-weight: 600;
+    color: #333;
+}
+.timeline-item.pending .timeline-content h6 {
+    color: #adb5bd;
+}
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,596 @@
+{% extends 'admin_ui/base.html' %}
+
+{% block title %}Dashboard - Fixly Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-container {
+    position: relative;
+    height: 280px;
+    width: 100%;
+}
+.chart-card {
+    transition: all 0.3s;
+}
+.chart-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+}
+.stat-mini {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+.stat-mini:last-child {
+    margin-bottom: 0;
+}
+.stat-mini .value {
+    font-size: 20px;
+    font-weight: 700;
+}
+.quick-action {
+    padding: 16px;
+    border-radius: 10px;
+    text-align: center;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+.quick-action:hover {
+    transform: scale(1.03);
+    color: inherit;
+}
+.quick-action i {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Vue d'ensemble de l'activité</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'admin_tickets' %}?status=open" class="btn btn-outline-primary">
+            <i class="fas fa-list me-2"></i>Tous les tickets
+        </a>
+    </div>
+</div>
+
+<!-- Stats principales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <a href="{% url 'admin_tickets' %}?status=open" class="text-decoration-none">
+            <div class="stat-card blue" style="cursor:pointer;">
+                <div class="stat-icon"><i class="fas fa-inbox"></i></div>
+                <h3>{{ stats.new }}</h3>
+                <p>Nouveaux tickets</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'admin_tickets' %}?status=in_progress" class="text-decoration-none">
+            <div class="stat-card orange" style="cursor:pointer;">
+                <div class="stat-icon"><i class="fas fa-spinner"></i></div>
+                <h3>{{ stats.in_progress }}</h3>
+                <p>En cours</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'admin_tickets' %}?sla=breached" class="text-decoration-none">
+            <div class="stat-card" style="background: linear-gradient(135deg, #fff5f5 0%, #fee); cursor:pointer;">
+                <div class="stat-icon" style="background: #fee; color: #e74c3c;"><i class="fas fa-exclamation-triangle"></i></div>
+                <h3 class="text-danger">{{ stats.sla_breached }}</h3>
+                <p>SLA dépassé</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'admin_tickets' %}?status=resolved" class="text-decoration-none">
+            <div class="stat-card green" style="cursor:pointer;">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <h3>{{ stats.resolved }}</h3>
+                <p>Résolus ce mois</p>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Graphiques -->
+<div class="row mb-4">
+    <!-- Tickets par mois -->
+    <div class="col-lg-8">
+        <div class="card chart-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-chart-line me-2"></i>Évolution des tickets</span>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary active" onclick="updateChart('6months')">6 mois</button>
+                    <button class="btn btn-outline-secondary" onclick="updateChart('12months')">12 mois</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="ticketsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Répartition par catégorie -->
+    <div class="col-lg-4">
+        <div class="card chart-card">
+            <div class="card-header">
+                <i class="fas fa-chart-pie me-2"></i>Par catégorie
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Répartition par statut -->
+    <div class="col-lg-4">
+        <div class="card chart-card">
+            <div class="card-header">
+                <i class="fas fa-chart-doughnut me-2"></i>Par statut
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Performance contractors -->
+    <div class="col-lg-8">
+        <div class="card chart-card">
+            <div class="card-header">
+                <i class="fas fa-chart-bar me-2"></i>Performance des contractors
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="contractorChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertes SLA et actions rapides -->
+<div class="row">
+    <!-- Tickets SLA critique -->
+    <div class="col-lg-8">
+        {% if sla_breached_tickets %}
+        <div class="card mb-4 border-danger">
+            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-exclamation-triangle me-2"></i>Tickets en retard (SLA dépassé)</span>
+                <span class="badge bg-white text-danger">{{ sla_breached_tickets|length }}</span>
+            </div>
+            <div class="card-body">
+                {% for item in sla_breached_tickets|slice:":5" %}
+                <div class="ticket-item urgent d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="text-danger">#{{ item.ticket.ticket_id }}</strong>
+                        <span class="mx-2">—</span>
+                        <span>{{ item.ticket.title|truncatewords:8 }}</span>
+                        <span class="badge bg-danger ms-2">{{ item.hours_late }}h de retard</span>
+                        <br>
+                        <small class="text-muted">
+                            <i class="fas fa-map-marker-alt me-1"></i>{{ item.address }}
+                        </small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'admin_ticket_detail' item.ticket.ticket_id %}" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        {% if not item.ticket.assigned_contractor %}
+                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#assignModal" 
+                                onclick="setTicketId({{ item.ticket.ticket_id }}, '{{ item.ticket.title|escapejs }}')">
+                            <i class="fas fa-user-plus"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% if sla_breached_tickets|length > 5 %}
+                <div class="text-center mt-3">
+                    <a href="{% url 'admin_tickets' %}?sla=breached" class="btn btn-outline-danger btn-sm">
+                        Voir tous ({{ sla_breached_tickets|length }})
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if urgent_tickets %}
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-clock me-2"></i>Tickets urgents (SLA proche)</span>
+                <span class="badge bg-dark">{{ urgent_tickets|length }}</span>
+            </div>
+            <div class="card-body">
+                {% for item in urgent_tickets|slice:":3" %}
+                <div class="ticket-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="text-primary">#{{ item.ticket.ticket_id }}</strong>
+                        <span class="mx-2">—</span>
+                        <span>{{ item.ticket.title|truncatewords:8 }}</span>
+                        <span class="badge bg-warning text-dark ms-2">{{ item.hours_remaining }}h restantes</span>
+                    </div>
+                    <a href="{% url 'admin_ticket_detail' item.ticket.ticket_id %}" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Tickets non assignés -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-inbox me-2"></i>À assigner</span>
+                <a href="{% url 'admin_tickets' %}?status=open" class="btn btn-sm btn-outline-primary">Voir tous</a>
+            </div>
+            <div class="card-body">
+                {% if unassigned_tickets %}
+                {% for ticket in unassigned_tickets %}
+                <div class="ticket-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="text-primary">#{{ ticket.ticket_id }}</strong>
+                        <span class="mx-2">—</span>
+                        <span>{{ ticket.title|truncatewords:6 }}</span>
+                        <br>
+                        <small class="text-muted">{{ ticket.created_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#assignModal" 
+                            onclick="setTicketId({{ ticket.ticket_id }}, '{{ ticket.title|escapejs }}')">
+                        <i class="fas fa-user-plus me-1"></i>Attribuer
+                    </button>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <p class="text-muted mb-0">Tous les tickets sont assignés 👍</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar droite -->
+    <div class="col-lg-4">
+        <!-- Actions rapides -->
+        <div class="card mb-4">
+            <div class="card-header"><i class="fas fa-bolt me-2"></i>Actions rapides</div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a href="{% url 'admin_tickets' %}" class="quick-action bg-primary bg-opacity-10">
+                            <i class="fas fa-ticket-alt text-primary"></i>
+                            <div class="small fw-medium">Tickets</div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'admin_contractors' %}" class="quick-action bg-success bg-opacity-10">
+                            <i class="fas fa-users text-success"></i>
+                            <div class="small fw-medium">Contractors</div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'admin_buildings' %}" class="quick-action bg-info bg-opacity-10">
+                            <i class="fas fa-building text-info"></i>
+                            <div class="small fw-medium">Immeubles</div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'admin_reports' %}" class="quick-action bg-warning bg-opacity-10">
+                            <i class="fas fa-chart-bar text-warning"></i>
+                            <div class="small fw-medium">Rapports</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats rapides -->
+        <div class="card mb-4">
+            <div class="card-header"><i class="fas fa-tachometer-alt me-2"></i>Statistiques</div>
+            <div class="card-body">
+                <div class="stat-mini">
+                    <span class="text-muted">Total tickets</span>
+                    <span class="value">{{ stats.total }}</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="text-muted">Temps moyen résolution</span>
+                    <span class="value text-success">{{ stats.avg_resolution_time|default:"2.5j" }}</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="text-muted">Taux SLA respecté</span>
+                    <span class="value text-primary">{{ stats.sla_rate|default:"87%" }}</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="text-muted">Contractors actifs</span>
+                    <span class="value">{{ stats.active_contractors }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activité récente -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-history me-2"></i>Activité récente</div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for activity in recent_activities %}
+                    <li class="list-group-item d-flex align-items-center">
+                        <div class="me-3">
+                            {% if activity.type == 'created' %}
+                            <span class="badge bg-primary rounded-circle p-2"><i class="fas fa-plus"></i></span>
+                            {% elif activity.type == 'resolved' %}
+                            <span class="badge bg-success rounded-circle p-2"><i class="fas fa-check"></i></span>
+                            {% else %}
+                            <span class="badge bg-info rounded-circle p-2"><i class="fas fa-edit"></i></span>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="small fw-medium">{{ activity.title }}</div>
+                            <div class="text-muted small">{{ activity.time }}</div>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-center text-muted py-4">
+                        Aucune activité récente
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Assignation -->
+<div class="modal fade" id="assignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Attribuer le ticket <span id="ticketIdDisplay"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" id="assignForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p class="text-muted" id="ticketTitleDisplay"></p>
+                    <label class="form-label">Contractor</label>
+                    <select name="contractor_id" class="form-select" required>
+                        <option value="">-- Sélectionner --</option>
+                        {% for c in contractors %}
+                        <option value="{{ c.contractor_id }}">{{ c.company_name }} - {{ c.specialties|default:"Général" }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-check me-1"></i>Attribuer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Données des graphiques (passées depuis Django)
+const chartData = {
+    months: {{ chart_data.months|safe }},
+    created: {{ chart_data.created|safe }},
+    resolved: {{ chart_data.resolved|safe }},
+    categories: {{ chart_data.categories|safe }},
+    categoryValues: {{ chart_data.category_values|safe }},
+    statusLabels: {{ chart_data.status_labels|safe }},
+    statusValues: {{ chart_data.status_values|safe }},
+    contractors: {{ chart_data.contractors|safe }},
+    contractorCompleted: {{ chart_data.contractor_completed|safe }},
+    contractorPending: {{ chart_data.contractor_pending|safe }}
+};
+
+// Couleurs
+const colors = {
+    primary: '#3498db',
+    success: '#27ae60',
+    warning: '#f39c12',
+    danger: '#e74c3c',
+    info: '#17a2b8',
+    purple: '#9b59b6',
+    teal: '#1abc9c',
+    orange: '#e67e22'
+};
+
+// Graphique évolution tickets
+const ticketsCtx = document.getElementById('ticketsChart').getContext('2d');
+const ticketsChart = new Chart(ticketsCtx, {
+    type: 'line',
+    data: {
+        labels: chartData.months,
+        datasets: [
+            {
+                label: 'Créés',
+                data: chartData.created,
+                borderColor: colors.primary,
+                backgroundColor: colors.primary + '20',
+                fill: true,
+                tension: 0.4
+            },
+            {
+                label: 'Résolus',
+                data: chartData.resolved,
+                borderColor: colors.success,
+                backgroundColor: colors.success + '20',
+                fill: true,
+                tension: 0.4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// Graphique par catégorie (Doughnut)
+const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+new Chart(categoryCtx, {
+    type: 'doughnut',
+    data: {
+        labels: chartData.categories,
+        datasets: [{
+            data: chartData.categoryValues,
+            backgroundColor: [
+                colors.primary,
+                colors.warning,
+                colors.success,
+                colors.danger,
+                colors.purple,
+                colors.teal,
+                colors.orange,
+                colors.info
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'right',
+                labels: {
+                    boxWidth: 12,
+                    padding: 10
+                }
+            }
+        },
+        cutout: '60%'
+    }
+});
+
+// Graphique par statut
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: chartData.statusLabels,
+        datasets: [{
+            data: chartData.statusValues,
+            backgroundColor: [
+                colors.primary,    // open
+                colors.warning,    // in_progress
+                colors.success,    // resolved
+                '#6c757d'          // closed
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        },
+        cutout: '55%'
+    }
+});
+
+// Graphique performance contractors
+const contractorCtx = document.getElementById('contractorChart').getContext('2d');
+new Chart(contractorCtx, {
+    type: 'bar',
+    data: {
+        labels: chartData.contractors,
+        datasets: [
+            {
+                label: 'Terminés',
+                data: chartData.contractorCompleted,
+                backgroundColor: colors.success,
+                borderRadius: 4
+            },
+            {
+                label: 'En cours',
+                data: chartData.contractorPending,
+                backgroundColor: colors.warning,
+                borderRadius: 4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        },
+        scales: {
+            x: {
+                stacked: true
+            },
+            y: {
+                stacked: true,
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// Fonction pour modal
+function setTicketId(id, title) {
+    document.getElementById('ticketIdDisplay').textContent = '#' + id;
+    document.getElementById('ticketTitleDisplay').textContent = title;
+    document.getElementById('assignForm').action = '/fixly-admin/tickets/' + id + '/assign/';
+}
+
+// Fonction update chart (placeholder)
+function updateChart(period) {
+    console.log('Update chart:', period);
+    // Implémenter si nécessaire
+}
+</script>
+{% endblock %}

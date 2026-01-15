@@ -1,0 +1,12 @@
+[run]
+source = core
+omit =
+    */management/commands/*
+    */migrations/*
+    */views*.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError

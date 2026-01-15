@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="#2c3e50"/>
+  
+  <!-- Small wrench icon on top -->
+  <g transform="translate(100,55) rotate(-45) scale(0.35)">
+    <rect x="-12" y="-60" width="24" height="80" rx="6" fill="#e67e22"/>
+    <path d="M-25,-60 L-25,-75 C-25,-90 -15,-95 0,-95 C15,-95 25,-90 25,-75 L25,-60 L15,-60 L15,-70 C15,-80 10,-82 0,-82 C-10,-82 -15,-80 -15,-70 L-15,-60 Z" fill="#e67e22"/>
+    <rect x="-8" y="-95" width="16" height="20" fill="#2c3e50"/>
+  </g>
+  
+  <!-- FIXLY text - large and centered -->
+  <text x="100" y="130" text-anchor="middle" font-family="Arial Black, Helvetica, sans-serif" font-weight="900" font-size="44" fill="#ecf0f1">FIXLY</text>
+  
+  <!-- Green underline accent -->
+  <rect x="35" y="145" width="130" height="5" rx="2" fill="#27ae60"/>
+</svg>

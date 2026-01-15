@@ -1,0 +1,45 @@
+{% extends 'admin_ui/base.html' %}
+
+{% block title %}Buildings - Fixly{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Buildings</h1>
+<p class="page-subtitle">Liste des immeubles</p>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Adresse</th>
+                    <th>Ville</th>
+                    <th>Propriétaire</th>
+                    <th>Unités</th>
+                    <th>Tickets ouverts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in buildings %}
+                <tr>
+                    <td class="fw-bold">{{ b.name }}</td>
+                    <td>{{ b.address }}</td>
+                    <td>{{ b.postal_code }} {{ b.city }}</td>
+                    <td>{{ b.owner.name|default:"-" }}</td>
+                    <td>{{ b.units_count }}</td>
+                    <td>
+                        {% if b.open_tickets > 0 %}
+                        <span class="badge bg-danger">{{ b.open_tickets }}</span>
+                        {% else %}
+                        <span class="badge bg-success">0</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center py-4 text-muted">Aucun building</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

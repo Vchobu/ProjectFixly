@@ -1,0 +1,37 @@
+{% extends 'login_base.html' %}
+
+{% block title %}Connexion System Admin - Fixly{% endblock %}
+{% block primary_color %}#6c5ce7{% endblock %}
+{% block portal_badge %}System Admin{% endblock %}
+{% block login_title %}Administration Système{% endblock %}
+{% block login_subtitle %}Accès réservé aux administrateurs système{% endblock %}
+
+{% block login_form %}
+<div class="alert alert-warning mb-4" style="background: #f8f4ff; border: 1px solid #6c5ce7; color: #5b4cdb;">
+    <i class="fas fa-database me-2"></i>Accès base de données Django
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Nom d'utilisateur</label>
+    <div class="input-group">
+        <span class="input-group-text"><i class="fas fa-user-shield"></i></span>
+        <input type="text" name="username" id="id_username" class="form-control" placeholder="superadmin" value="admin" required autofocus>
+    </div>
+</div>
+
+<div class="mb-4">
+    <label class="form-label">Mot de passe</label>
+    <div class="input-group">
+        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+        <input type="password" name="password" id="id_password" class="form-control" placeholder="••••••••" value="admin" required>
+    </div>
+</div>
+
+<input type="hidden" name="next" value="{{ next }}">
+{% endblock %}
+
+{% block login_footer %}
+<div class="login-footer">
+    <p><a href="/fixly-admin/"><i class="fas fa-arrow-left me-1"></i>Retour à l'administration Fixly</a></p>
+</div>
+{% endblock %}

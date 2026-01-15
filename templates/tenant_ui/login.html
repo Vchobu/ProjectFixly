@@ -1,0 +1,25 @@
+{% extends 'login_base.html' %}
+
+{% block title %}Connexion Locataire - Fixly{% endblock %}
+{% block primary_color %}#27ae60{% endblock %}
+{% block portal_badge %}Espace Locataire{% endblock %}
+{% block login_title %}Bienvenue !{% endblock %}
+{% block login_subtitle %}Connectez-vous pour gérer vos demandes{% endblock %}
+
+{% block login_form %}
+<div class="mb-3">
+    <label class="form-label">Email</label>
+    <div class="input-group">
+        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+        <input type="email" name="email" class="form-control" placeholder="votre@email.com" value="marie.dupont@email.com" required>
+    </div>
+</div>
+
+<div class="mb-4">
+    <label class="form-label">Mot de passe</label>
+    <div class="input-group">
+        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+        <input type="password" name="password" class="form-control" placeholder="••••••••" value="admin" required>
+    </div>
+</div>
+{% endblock %}

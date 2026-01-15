@@ -1,0 +1,25 @@
+{% extends 'login_base.html' %}
+
+{% block title %}Admin - Fixly{% endblock %}
+{% block primary_color %}#2c3e50{% endblock %}
+{% block portal_badge %}Administration{% endblock %}
+{% block login_title %}Administration{% endblock %}
+{% block login_subtitle %}Accès réservé aux gestionnaires{% endblock %}
+
+{% block login_form %}
+<div class="mb-3">
+    <label class="form-label">Nom d'utilisateur</label>
+    <div class="input-group">
+        <span class="input-group-text"><i class="fas fa-user"></i></span>
+        <input type="text" name="username" class="form-control" placeholder="admin" value="admin" required>
+    </div>
+</div>
+
+<div class="mb-4">
+    <label class="form-label">Mot de passe</label>
+    <div class="input-group">
+        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+        <input type="password" name="password" class="form-control" placeholder="••••••••" value="admin" required>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,389 @@
+{% extends 'admin_ui/base.html' %}
+
+{% block title %}Ticket #{{ ticket.ticket_id }} - Fixly{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'admin_tickets' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-2"></i>Retour aux tickets
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Ticket info -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="fw-bold fs-5">Ticket #{{ ticket.ticket_id }}</span>
+                    {% if ticket.sla_status == 'breached' %}
+                    <span class="badge bg-danger"><i class="fas fa-exclamation-circle me-1"></i>SLA dépassé</span>
+                    {% elif ticket.sla_status == 'warning' %}
+                    <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Urgent - {{ ticket.sla_remaining }} restantes</span>
+                    {% endif %}
+                </div>
+                <span class="status-badge status-{{ ticket.status }}">{{ ticket.status }}</span>
+            </div>
+            <div class="card-body">
+                <h4 class="mb-3">{{ ticket.title }}</h4>
+                <p class="text-muted mb-4" style="white-space: pre-line;">{{ ticket.description }}</p>
+                
+                <!-- Infos rapides -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded">
+                            <small class="text-muted d-block">Catégorie</small>
+                            <strong>{{ ticket.category.name|default:"Non catégorisé" }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded">
+                            <small class="text-muted d-block">Sévérité</small>
+                            <span class="badge {% if ticket.severity == 'critical' %}bg-danger{% elif ticket.severity == 'high' %}bg-warning text-dark{% elif ticket.severity == 'medium' %}bg-info{% else %}bg-secondary{% endif %}">
+                                {{ ticket.severity|default:"medium" }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded">
+                            <small class="text-muted d-block">Créé le</small>
+                            <strong>{{ ticket.created_at|date:"d/m/Y H:i" }}</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Photos -->
+                {% if photos %}
+                <hr>
+                <h6 class="mb-3"><i class="fas fa-images me-2"></i>Photos jointes ({{ photos|length }})</h6>
+                <div class="d-flex flex-wrap gap-3">
+                    {% for photo in photos %}
+                    <a href="/media/{{ photo.file_path }}" target="_blank" class="photo-thumbnail">
+                        <img src="/media/{{ photo.file_path }}" alt="{{ photo.file_name }}">
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <hr>
+                
+                <!-- Actions -->
+                <div class="d-flex gap-2 flex-wrap">
+                    {% if not ticket.assigned_contractor %}
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal">
+                        <i class="fas fa-user-plus me-2"></i>Attribuer un contractor
+                    </button>
+                    {% endif %}
+                    
+                    <form method="post" action="{% url 'change_ticket_status' ticket.ticket_id %}" class="d-inline">
+                        {% csrf_token %}
+                        {% if ticket.status == 'open' %}
+                        <input type="hidden" name="status" value="in_progress">
+                        <button class="btn btn-warning"><i class="fas fa-play me-2"></i>Passer en cours</button>
+                        {% elif ticket.status == 'in_progress' %}
+                        <input type="hidden" name="status" value="resolved">
+                        <button class="btn btn-success"><i class="fas fa-check me-2"></i>Marquer résolu</button>
+                        {% elif ticket.status == 'resolved' %}
+                        <input type="hidden" name="status" value="closed">
+                        <button class="btn btn-secondary"><i class="fas fa-archive me-2"></i>Clôturer</button>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Messages Section -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-comments me-2"></i>Messages ({{ ticket_messages|length }})</span>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#messageForm">
+                    <i class="fas fa-plus me-1"></i>Nouveau message
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Form to add message -->
+                <div class="collapse mb-4" id="messageForm">
+                    <form method="post" action="{% url 'admin_add_message' ticket.ticket_id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <textarea name="message_text" class="form-control" rows="3" placeholder="Votre message..." required></textarea>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_internal" id="isInternal">
+                                <label class="form-check-label text-muted" for="isInternal">
+                                    <i class="fas fa-lock me-1"></i>Note interne (invisible pour le locataire)
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>Envoyer
+                            </button>
+                        </div>
+                    </form>
+                    <hr>
+                </div>
+                
+                <!-- Messages list -->
+                {% if ticket_messages %}
+                <div class="messages-list">
+                    {% for msg in ticket_messages %}
+                    <div class="message-item mb-3 p-3 rounded {% if msg.is_internal %}bg-warning-subtle border-warning{% elif msg.user_sender %}bg-primary-subtle{% elif msg.contractor_sender %}bg-success-subtle{% else %}bg-light{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                {% if msg.is_internal %}
+                                <span class="badge bg-warning text-dark"><i class="fas fa-lock me-1"></i>Interne</span>
+                                {% endif %}
+                                
+                                {% if msg.tenant_sender %}
+                                <span class="badge bg-secondary"><i class="fas fa-user me-1"></i>{{ msg.tenant_sender.first_name }} {{ msg.tenant_sender.last_name }}</span>
+                                {% elif msg.contractor_sender %}
+                                <span class="badge bg-success"><i class="fas fa-tools me-1"></i>{{ msg.contractor_sender.company_name }}</span>
+                                {% elif msg.user_sender %}
+                                <span class="badge bg-primary"><i class="fas fa-user-shield me-1"></i>{{ msg.user_sender.username }} (Admin)</span>
+                                {% else %}
+                                <span class="badge bg-dark">Système</span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">{{ msg.created_at|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        <p class="mb-0" style="white-space: pre-line;">{{ msg.message_text }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-comments fa-2x mb-2"></i>
+                    <p class="mb-0">Aucun message pour ce ticket</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Timeline visuelle -->
+        <div class="card mb-4">
+            <div class="card-header"><i class="fas fa-history me-2"></i>Progression du ticket</div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item completed">
+                        <div class="timeline-marker"><i class="fas fa-plus"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Ticket créé</h6>
+                            <p class="text-muted mb-0 small">{{ ticket.created_at|date:"d/m/Y à H:i" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if ticket.assigned_contractor %}completed{% else %}{% if ticket.status == 'open' %}current{% else %}pending{% endif %}{% endif %}">
+                        <div class="timeline-marker"><i class="fas fa-user-plus"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Contractor assigné</h6>
+                            {% if ticket.assigned_contractor %}
+                            <p class="text-muted mb-0 small">{{ ticket.assigned_contractor.company_name }}<br>{{ ticket.assigned_at|date:"d/m/Y à H:i" }}</p>
+                            {% else %}
+                            <p class="text-muted mb-0 small">En attente d'assignation</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if ticket.status == 'in_progress' %}current{% elif ticket.status == 'resolved' or ticket.status == 'closed' %}completed{% else %}pending{% endif %}">
+                        <div class="timeline-marker"><i class="fas fa-wrench"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Intervention</h6>
+                            {% if ticket.status == 'in_progress' %}
+                            <p class="text-warning mb-0 small">En cours</p>
+                            {% elif ticket.status == 'resolved' or ticket.status == 'closed' %}
+                            <p class="text-success mb-0 small">Terminée</p>
+                            {% else %}
+                            <p class="text-muted mb-0 small">À venir</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if ticket.status == 'resolved' %}current{% elif ticket.status == 'closed' %}completed{% else %}pending{% endif %}">
+                        <div class="timeline-marker"><i class="fas fa-check"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Résolu</h6>
+                            {% if ticket.resolved_at %}
+                            <p class="text-muted mb-0 small">{{ ticket.resolved_at|date:"d/m/Y à H:i" }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {% if ticket.status == 'closed' %}completed{% else %}pending{% endif %}">
+                        <div class="timeline-marker"><i class="fas fa-flag-checkered"></i></div>
+                        <div class="timeline-content">
+                            <h6 class="mb-1">Clôturé</h6>
+                            {% if ticket.closed_at %}
+                            <p class="text-muted mb-0 small">{{ ticket.closed_at|date:"d/m/Y à H:i" }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Access Windows / Disponibilités -->
+        {% if ticket.access_windows %}
+        <div class="card mb-3 border-info">
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-calendar-check me-2"></i>Disponibilités locataire
+            </div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space: pre-line;">{{ ticket.access_windows }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Locataire -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="fas fa-user me-2"></i>Locataire</div>
+            <div class="card-body">
+                {% if ticket.tenant %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="user-avatar me-3" style="width: 45px; height: 45px; font-size: 16px;">
+                        {{ ticket.tenant.first_name|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <p class="fw-bold mb-0">{{ ticket.tenant.first_name }} {{ ticket.tenant.last_name }}</p>
+                        <small class="text-muted">Locataire</small>
+                    </div>
+                </div>
+                <p class="mb-2"><i class="fas fa-envelope me-2 text-muted"></i><a href="mailto:{{ ticket.tenant.email }}">{{ ticket.tenant.email }}</a></p>
+                <p class="mb-0"><i class="fas fa-phone me-2 text-muted"></i>{{ ticket.tenant.phone|default:"Non renseigné" }}</p>
+                {% else %}
+                <p class="text-muted mb-0">Non renseigné</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Contractor -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="fas fa-tools me-2"></i>Contractor</div>
+            <div class="card-body">
+                {% if ticket.assigned_contractor %}
+                <p class="fw-bold mb-1">{{ ticket.assigned_contractor.company_name }}</p>
+                <p class="text-muted mb-2">{{ ticket.assigned_contractor.contact_name }}</p>
+                <p class="mb-1"><i class="fas fa-phone me-2 text-muted"></i>{{ ticket.assigned_contractor.phone }}</p>
+                <p class="mb-0"><i class="fas fa-envelope me-2 text-muted"></i>{{ ticket.assigned_contractor.email }}</p>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-user-clock fa-2x text-muted mb-2"></i>
+                    <p class="text-muted mb-3">Non attribué</p>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#assignModal">
+                        <i class="fas fa-user-plus me-1"></i>Attribuer
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Localisation -->
+        <div class="card">
+            <div class="card-header"><i class="fas fa-map-marker-alt me-2"></i>Localisation</div>
+            <div class="card-body">
+                {% if ticket.unit %}
+                <p class="fw-bold mb-1">{{ ticket.unit.building.name }}</p>
+                <p class="text-muted mb-1">{{ ticket.unit.building.address }}</p>
+                <p class="text-muted mb-2">{{ ticket.unit.building.postal_code }} {{ ticket.unit.building.city }}</p>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Unité</span>
+                    <strong>{{ ticket.unit.unit_number }}</strong>
+                </div>
+                {% if ticket.unit.floor %}
+                <div class="d-flex justify-content-between mt-2">
+                    <span class="text-muted">Étage</span>
+                    <strong>{{ ticket.unit.floor }}</strong>
+                </div>
+                {% endif %}
+                {% else %}
+                <p class="text-muted mb-0">Non renseigné</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Assignation -->
+<div class="modal fade" id="assignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Attribuer le ticket #{{ ticket.ticket_id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'assign_contractor' ticket.ticket_id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Sélectionner un contractor</label>
+                        <select name="contractor_id" class="form-select" required>
+                            <option value="">-- Choisir --</option>
+                            {% for c in contractors %}
+                            <option value="{{ c.contractor_id }}">{{ c.company_name }} - {{ c.specialization|default:"Général" }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-check me-1"></i>Attribuer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.photo-thumbnail {
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #dee2e6;
+    transition: all 0.2s;
+}
+.photo-thumbnail:hover {
+    transform: scale(1.05);
+    border-color: #3498db;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.photo-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Timeline */
+.timeline { position: relative; padding-left: 35px; }
+.timeline::before { content: ''; position: absolute; left: 16px; top: 0; bottom: 0; width: 3px; background: #e9ecef; border-radius: 3px; }
+.timeline-item { position: relative; padding-bottom: 24px; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-marker { position: absolute; left: -35px; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 3px solid #e9ecef; background: white; color: #adb5bd; z-index: 1; }
+.timeline-item.completed .timeline-marker { background: #27ae60; border-color: #27ae60; color: white; }
+.timeline-item.current .timeline-marker { background: #f39c12; border-color: #f39c12; color: white; animation: pulse 2s infinite; }
+.timeline-item.pending .timeline-marker { background: #f8f9fa; }
+.timeline-content { padding-left: 12px; }
+.timeline-content h6 { font-weight: 600; margin-bottom: 4px; }
+.timeline-item.pending .timeline-content h6 { color: #adb5bd; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(243, 156, 18, 0); } 100% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0); } }
+
+/* Messages */
+.message-item {
+    border-left: 3px solid transparent;
+}
+.message-item.bg-warning-subtle {
+    border-left-color: #ffc107;
+}
+.message-item.bg-primary-subtle {
+    border-left-color: #0d6efd;
+}
+.message-item.bg-success-subtle {
+    border-left-color: #198754;
+}
+.message-item.bg-light {
+    border-left-color: #6c757d;
+}
+</style>
+{% endblock %}
