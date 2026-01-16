@@ -135,18 +135,19 @@ class Command(BaseCommand):
                 self.stdout.write(f"  {status} {tenant.first_name} {tenant.last_name} ({email})")
 
         # 6. Contractors
+        # IMPORTANT: specialties doit être une LISTE pour PostgreSQL ArrayField
         
         contractors_data = [
-            {"company_name": "Plomberie 1 SA", "contact_name": "Marc Fontaine", "specialties": "Plomberie", "phone": "+41 22 301 01 01"},
-            {"company_name": "Plomberie 2 SA", "contact_name": "Jean Dupuis", "specialties": "Plomberie", "phone": "+41 22 301 02 02"},
-            {"company_name": "Électricité 1 SA", "contact_name": "Julie Mercier", "specialties": "Électricité", "phone": "+41 22 302 01 01"},
-            {"company_name": "Électricité 2 SA", "contact_name": "Paul Renard", "specialties": "Électricité", "phone": "+41 22 302 02 02"},
-            {"company_name": "Chauffage 1 SA", "contact_name": "David Blanc", "specialties": "Chauffage", "phone": "+41 22 303 01 01"},
-            {"company_name": "Serrurerie 1 SA", "contact_name": "Alain Rousseau", "specialties": "Serrurerie", "phone": "+41 22 304 01 01"},
-            {"company_name": "Vitrage 1 SA", "contact_name": "Sophie Martin", "specialties": "Vitrage", "phone": "+41 22 305 01 01"},
-            {"company_name": "Peinture 1 SA", "contact_name": "Pierre Morel", "specialties": "Peinture", "phone": "+41 22 306 01 01"},
-            {"company_name": "Menuiserie 1 SA", "contact_name": "Claire Dubois", "specialties": "Menuiserie", "phone": "+41 22 307 01 01"},
-            {"company_name": "Nuisibles 1 SA", "contact_name": "Thomas Leroy", "specialties": "Nuisibles", "phone": "+41 22 308 01 01"},
+            {"company_name": "Plomberie 1 SA", "contact_name": "Marc Fontaine", "specialties": ["Plomberie"], "phone": "+41 22 301 01 01"},
+            {"company_name": "Plomberie 2 SA", "contact_name": "Jean Dupuis", "specialties": ["Plomberie"], "phone": "+41 22 301 02 02"},
+            {"company_name": "Électricité 1 SA", "contact_name": "Julie Mercier", "specialties": ["Électricité"], "phone": "+41 22 302 01 01"},
+            {"company_name": "Électricité 2 SA", "contact_name": "Paul Renard", "specialties": ["Électricité"], "phone": "+41 22 302 02 02"},
+            {"company_name": "Chauffage 1 SA", "contact_name": "David Blanc", "specialties": ["Chauffage"], "phone": "+41 22 303 01 01"},
+            {"company_name": "Serrurerie 1 SA", "contact_name": "Alain Rousseau", "specialties": ["Serrurerie"], "phone": "+41 22 304 01 01"},
+            {"company_name": "Vitrage 1 SA", "contact_name": "Sophie Martin", "specialties": ["Vitrage"], "phone": "+41 22 305 01 01"},
+            {"company_name": "Peinture 1 SA", "contact_name": "Pierre Morel", "specialties": ["Peinture"], "phone": "+41 22 306 01 01"},
+            {"company_name": "Menuiserie 1 SA", "contact_name": "Claire Dubois", "specialties": ["Menuiserie"], "phone": "+41 22 307 01 01"},
+            {"company_name": "Nuisibles 1 SA", "contact_name": "Thomas Leroy", "specialties": ["Nuisibles"], "phone": "+41 22 308 01 01"},
         ]
 
         self.stdout.write("\nContractors...")
